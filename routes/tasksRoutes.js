@@ -1,18 +1,17 @@
+//
 const express = require('express');
 const Task = require('../models/tasks');
 const verifyAccessToken = require('../middlewares/authenticateToken');
 const router = express.Router();
 
-// Fetch all tasks with optional filtering
 router.get('/', verifyAccessToken, async (req, res) => {
-    const query = { user: req.user._id }; // Base query to include only tasks belonging to the authenticated user
+    const query = { user: req.user._id }; 
     
-    // Apply filters if they are provided in the query string
     if (req.query.status) {
         query.status = req.query.status;
     }
+    
     if (req.query.deadline) {
-        // Example of a simple filter for tasks on or before a specific deadline
         query.deadline = { $lte: new Date(req.query.deadline) };
     }
     if (req.query.category) {
@@ -27,7 +26,6 @@ router.get('/', verifyAccessToken, async (req, res) => {
     }
 });
 
-// Create a new task
 router.post('/', verifyAccessToken, async (req, res) =>{
     const task = new Task({
         title: req.body.title,
@@ -46,7 +44,6 @@ router.post('/', verifyAccessToken, async (req, res) =>{
     }
 });
 
-// Middleware to find a task by ID
 async function getTask(req, res, next) {
     let task;
     try {
@@ -61,7 +58,6 @@ async function getTask(req, res, next) {
     next();
 }
 
-// Update a specific task
 router.put('/:id', verifyAccessToken, getTask, async (req, res) => {
     if (req.body.title !== undefined) {
         res.task.title = req.body.title;
@@ -84,7 +80,6 @@ router.put('/:id', verifyAccessToken, getTask, async (req, res) => {
     }
 });
 
-// Delete a specific task
 router.delete('/:id', verifyAccessToken, getTask, async (req, res) => {
     try {
         await res.task.remove();

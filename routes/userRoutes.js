@@ -2,12 +2,11 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-const verifyAccessToken = require('../middlewares/authenticateToken'); // Правильно импортированный middleware
+const verifyAccessToken = require('../middlewares/authenticateToken');
 const router = express.Router();
 
 require('dotenv').config();
 
-// Регистрация пользователя
 router.post('/register', async (req, res) => {
     try {
         const hashedPassword = await bcrypt.hash(req.body.password, 10);
@@ -23,7 +22,6 @@ router.post('/register', async (req, res) => {
     }
 });
 
-// Вход пользователя
 router.post('/login', async (req, res) => {
     try {
         const user = await User.findOne({ username: req.body.username });
@@ -38,7 +36,6 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// Удаление аккаунта пользователя
 router.delete('/:email', verifyAccessToken, async (req, res) => {
     try {
         const email = decodeURIComponent(req.params.email);
@@ -50,7 +47,6 @@ router.delete('/:email', verifyAccessToken, async (req, res) => {
     }
 });
 
-// Получение информации о пользователе после входа
 router.get('/me', verifyAccessToken, async (req, res) => {
     try {
         const user = await User.findById(req.user._id).select('-password');
