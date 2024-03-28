@@ -1,25 +1,41 @@
 const express = require('express');
+const Task = require('../models/tasks');
+const verifyAccessToken = require('../middlewares/authenticateToken');
 const router = express.Router();
-const Task = require('../models/tasks'); // Убедитесь, что путь к модели задач правильный
 
-// Получение всех задач
-router.get('/', async (req, res) => {
+// Fetch all tasks with optional filtering
+router.get('/', verifyAccessToken, async (req, res) => {
+    const query = { user: req.user._id }; // Base query to include only tasks belonging to the authenticated user
+    
+    // Apply filters if they are provided in the query string
+    if (req.query.status) {
+        query.status = req.query.status;
+    }
+    if (req.query.deadline) {
+        // Example of a simple filter for tasks on or before a specific deadline
+        query.deadline = { $lte: new Date(req.query.deadline) };
+    }
+    if (req.query.category) {
+        query.category = req.query.category;
+    }
+
     try {
-        const tasks = await Task.find();
+        const tasks = await Task.find(query);
         res.json(tasks);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 });
 
-// Создание новой задачи
-router.post('/', async (req, res) => {
+// Create a new task
+router.post('/', verifyAccessToken, async (req, res) =>{
     const task = new Task({
         title: req.body.title,
         description: req.body.description,
         status: req.body.status,
         deadline: req.body.deadline,
-        user: req.body.user // Прямое использование 'user' из тела запроса
+        user: req.user._id,
+        category: req.body.category
     });
     
     try {
@@ -30,20 +46,7 @@ router.post('/', async (req, res) => {
     }
 });
 
-// Получение задач конкретного пользователя
-router.get('/user/:userId', async (req, res) => {
-    try {
-        const userId = req.params.userId.trim(); // Использование trim() для удаления лишних пробелов и символов перевода строки
-        const tasks = await Task.find({ user: userId });
-        res.json(tasks);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-});
-
-
-
-// Middleware для поиска задачи по ID
+// Middleware to find a task by ID
 async function getTask(req, res, next) {
     let task;
     try {
@@ -58,9 +61,8 @@ async function getTask(req, res, next) {
     next();
 }
 
-// Обновление конкретной задачи
-router.put('/:id', getTask, async (req, res) => {
-    // Проверяем, есть ли в теле запроса новые значения для каждого поля и обновляем их при необходимости
+// Update a specific task
+router.put('/:id', verifyAccessToken, getTask, async (req, res) => {
     if (req.body.title !== undefined) {
         res.task.title = req.body.title;
     }
@@ -73,28 +75,23 @@ router.put('/:id', getTask, async (req, res) => {
     if (req.body.deadline !== undefined) {
         res.task.deadline = req.body.deadline;
     }
-    // По аналогии можно добавить обновление для других полей
 
     try {
-        // После изменения свойств задачи сохраняем её
         const updatedTask = await res.task.save();
-        // Отправляем обновлённую задачу в ответе
         res.json(updatedTask);
     } catch (err) {
-        // В случае ошибки во время сохранения отправляем статус 400 с сообщением об ошибке
         res.status(400).json({ message: err.message });
     }
 });
 
-// Удаление конкретной задачи
-router.delete('/:id', getTask, async (req, res) => {
+// Delete a specific task
+router.delete('/:id', verifyAccessToken, getTask, async (req, res) => {
     try {
-        await Task.deleteOne({ _id: res.task._id });
+        await res.task.remove();
         res.json({ message: 'Deleted Task' });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 });
-
 
 module.exports = router;

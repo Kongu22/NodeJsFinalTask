@@ -9,7 +9,6 @@ const taskSchema = new Schema({
     },
     description: {
         type: String,
-        required: false,
         trim: true
     },
     status: {
@@ -20,12 +19,16 @@ const taskSchema = new Schema({
     },
     deadline: {
         type: Date,
-        required: false
     },
     user: {
         type: Schema.Types.ObjectId,
         required: true,
-        ref: 'User' // Reference to the User model
+        ref: 'User'
+    },
+    category: {
+        type: Schema.Types.ObjectId,
+        required: true,
+        ref: 'Category'
     }
 }, { timestamps: true });
 
