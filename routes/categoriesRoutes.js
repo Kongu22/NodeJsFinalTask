@@ -1,9 +1,8 @@
 const express = require('express');
 const Category = require('../models/categories');
-const verifyAccessToken = require('../middlewares/authenticateToken');// Assuming you have this middleware
+const verifyAccessToken = require('../middlewares/authenticateToken');
 const router = express.Router();
 
-// Create a new category
 router.post('/', verifyAccessToken, async (req, res) => {
     const category = new Category({
         name: req.body.name,
@@ -19,7 +18,6 @@ router.post('/', verifyAccessToken, async (req, res) => {
     }
 });
 
-// Fetch all categories
 router.get('/', async (req, res) => {
     try {
         const categories = await Category.find();
@@ -29,7 +27,6 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Middleware to find a category by ID
 async function getCategory(req, res, next) {
     let category;
     try {
@@ -44,12 +41,10 @@ async function getCategory(req, res, next) {
     next();
 }
 
-// Fetch a single category by ID
 router.get('/:id', getCategory, (req, res) => {
     res.json(res.category);
 });
 
-// Update a category (using PATCH for partial updates)
 router.patch('/:id', getCategory, async (req, res) => {
     if (req.body.name != null) {
         res.category.name = req.body.name;
@@ -66,7 +61,6 @@ router.patch('/:id', getCategory, async (req, res) => {
     }
 });
 
-// Delete a category
 router.delete('/:id', getCategory, async (req, res) => {
     try {
         await res.category.remove();
